@@ -38,12 +38,13 @@ export function ameacasDoCombate(combat) {
 
 /**
  * Calcula o ND do encontro de um combate.
- * @returns {null | ReturnType<calcularND> & { rotulo:string, ndTesouro:string }}
+ * @returns {null | ReturnType<calcularND> & { rotulo:string, exato:string, ndTesouro:string }}
  */
 export function calcularCombate(combat = game.combat) {
-  const r = calcularND(ameacasDoCombate(combat), { regra: config("regra") });
+  const r = calcularND(ameacasDoCombate(combat));
   if (!r) return null;
-  return { ...r, rotulo: formatarND(r.nd), ndTesouro: ndInteiro(r.nd, config("arredondamento")) };
+  const modo = config("arredondamento");
+  return { ...r, rotulo: ndInteiro(r.nd, modo, false), exato: formatarND(r.nd), ndTesouro: ndInteiro(r.nd, modo) };
 }
 
 /* -------------------------------------------- */
@@ -52,14 +53,17 @@ export function calcularCombate(combat = game.combat) {
 
 const plural = (n, s, p) => (n === 1 ? s : p);
 
+/** ND arredondado conforme a configuração (sem limite de 20). */
+const ndArredondado = (nd) => ndInteiro(nd, config("arredondamento"), false);
+
 function linhaGrupo(g) {
   const qtd = `${g.quantidade}× ND ${formatarND(g.nd)}`;
   const nomes = [...new Set(g.nomes.filter(Boolean))].map(esc).join(", ");
-  const ndGrupo = `ND de encontro ${formatarND(g.ndGrupo)}`;
+  const ndGrupo = `ND de encontro ${ndArredondado(g.ndGrupo)}`;
   let efeito;
   if (g.base) efeito = "Valor básico";
   else if (!g.bonus) efeito = `${formatarND(g.diferenca)} abaixo do básico — não afeta`;
-  else efeito = `${g.diferenca <= 1 + 1e-9 ? "até 1" : g.diferenca <= 2 + 1e-9 ? "até 2" : "até 3"} abaixo do básico: +${formatarND(g.bonus)}`;
+  else efeito = `Até 1 ponto abaixo do básico: +${formatarND(g.bonus)}`;
   return `<tr class="${g.base ? "base" : !g.bonus ? "ignorado" : ""}">
     <td><strong>${qtd}</strong>${nomes ? `<small>${nomes}</small>` : ""}</td>
     <td>${ndGrupo}<small>${efeito}</small></td>
@@ -67,22 +71,43 @@ function linhaGrupo(g) {
 }
 
 function htmlDetalhes(r) {
-  const tesouro = config("arredondamento") === "proximo" ? "arredondado" : "arredondado para baixo";
+  const modo = config("arredondamento") === "proximo" ? "arredondado" : "arredondado para baixo";
+  const extras = [`${r.total} ${plural(r.total, "ameaça", "ameaças")}`];
+  if (r.exato !== r.rotulo) extras.push(`valor exato ${r.exato}, ${modo}`);
+  if (r.rotulo !== r.ndTesouro) extras.push(`para tesouro: ND ${r.ndTesouro} (máximo da tabela)`);
   return `<div class="t20nd-detalhes">
     <div class="t20nd-resumo">
       <span>ND do encontro</span>
       <strong>${r.rotulo}</strong>
-      <small>${r.total} ${plural(r.total, "ameaça", "ameaças")}${
-        r.rotulo !== r.ndTesouro ? ` · para tesouro: ND ${r.ndTesouro} (${tesouro})` : ""
-      }</small>
+      <small>${extras.join(" · ")}</small>
     </div>
     <table><tbody>${r.grupos.map(linhaGrupo).join("")}</tbody></table>
   </div>`;
 }
 
+/**
+ * Quadro compacto com o ND calculado e os grupos, para outras janelas
+ * (ex.: tela "Gerar tesouro" do T20 — Gerador de Tesouros).
+ */
+export function htmlResumo(combat = game.combat) {
+  const r = calcularCombate(combat);
+  if (!r) return "";
+  const itens = r.grupos
+    .map((g) => {
+      const efeito = g.base ? "valor básico" : g.bonus ? `+${formatarND(g.bonus)}` : "não afeta";
+      return `<li class="${g.base ? "base" : !g.bonus ? "ignorado" : ""}">${g.quantidade}× ND ${formatarND(g.nd)} → ND ${ndArredondado(g.ndGrupo)} <em>(${efeito})</em></li>`;
+    })
+    .join("");
+  const exato = r.exato !== r.rotulo ? ` <small>(exato ${r.exato})</small>` : "";
+  return `<div class="t20nd-caixa">
+    <div class="t20nd-caixa-topo"><i class="fa-solid fa-skull"></i><span>ND do encontro calculado</span><strong>${r.rotulo}</strong>${exato}</div>
+    <ul>${itens}</ul>
+  </div>`;
+}
+
 function tooltipResumo(r) {
   const linhas = r.grupos.map((g) => {
-    const qtd = `${g.quantidade}× ND ${formatarND(g.nd)} (ND ${formatarND(g.ndGrupo)})`;
+    const qtd = `${g.quantidade}× ND ${formatarND(g.nd)} (ND ${ndArredondado(g.ndGrupo)})`;
     if (g.base) return `${qtd}: valor básico`;
     return g.bonus ? `${qtd}: +${formatarND(g.bonus)}` : `${qtd}: não afeta`;
   });
@@ -106,7 +131,7 @@ export async function mostrarDetalhes(combat = game.combat) {
     rejectClose: false,
     buttons
   });
-  if (acao === "tesouro") tesouro.api.abrirPrompt({ ndSugerido: r.ndTesouro, origem: MODULE_ID });
+  if (acao === "tesouro") tesouro.api.abrirPrompt({ ndSugerido: r.ndTesouro, combat });
 }
 
 /* -------------------------------------------- */
@@ -144,7 +169,11 @@ function desenharFaixa(app, html) {
   }
 
   const cabecalho = raiz.querySelector(".combat-tracker-header") ?? raiz.querySelector("#combat-round") ?? raiz.querySelector("header");
-  if (cabecalho) cabecalho.append(faixa);
+  // Fica entre o cabeçalho e a lista de combatentes (dentro do cabeçalho, que
+  // tem altura fixa no v13, ela transbordava sobre os combatentes).
+  const lista = raiz.querySelector("ol.combat-tracker, #combat-tracker");
+  if (lista) lista.before(faixa);
+  else if (cabecalho) cabecalho.after(faixa);
   else raiz.prepend(faixa);
 }
 
@@ -197,22 +226,9 @@ Hooks.once("init", () => {
     onChange: () => redesenhar()
   });
 
-  game.settings.register(MODULE_ID, "regra", {
-    name: "Regra para ameaças de ND diferentes",
-    hint:
-      "Desafios compostos: cada grupo até 1 ponto abaixo do valor básico soma +1; grupos 2 ou mais abaixo não afetam. " +
-      "Fracionada (opcional): grupos até 2 abaixo somam +1/2 e até 3 abaixo somam +1/4.",
-    scope: "world",
-    config: true,
-    type: String,
-    default: "livro",
-    choices: { livro: "Desafios compostos (livro)", fracionada: "Fracionada (+1/2 e +1/4)" },
-    onChange: () => redesenhar()
-  });
-
   game.settings.register(MODULE_ID, "arredondamento", {
-    name: "ND sugerido para tesouro",
-    hint: "O ND do encontro pode ser fracionário (ex.: 5¾). Como transformá-lo num ND da tabela de tesouro.",
+    name: "Arredondamento do ND do encontro",
+    hint: "Quantidades que não dobram geram ND quebrado (ex.: 3× ND 7 = 10,17). Vale para o ND exibido e para o sugerido ao tesouro.",
     scope: "world",
     config: true,
     type: String,
@@ -231,7 +247,9 @@ Hooks.once("init", () => {
     ameacasDoCombate,
     ndDoAtor,
     formatarND,
-    mostrarDetalhes
+    mostrarDetalhes,
+    /** HTML com o ND calculado e os grupos (usado pelo gerador de tesouro). */
+    htmlResumo
   };
 });
 

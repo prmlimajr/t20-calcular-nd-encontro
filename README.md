@@ -16,9 +16,7 @@ Módulo para Foundry VTT (v12/v13) e o sistema **Tormenta20** que calcula o nív
 
 Exemplo do livro: 2 necromantes veteranos (ND 7 → 9), 4 necromantes (ND 4 → 8), 8 esqueletos (ND 2 → 8) e uma armadilha ND 5 (→ 5) = **ND 11**.
 
-**Regra fracionada (opcional):** no passo 4, grupos até 2 pontos abaixo somam +1/2 e até 3 pontos abaixo somam +1/4.
-
-Quantidades que não são potência de 2 seguem a mesma curva (3× ND 3 ≈ ND 6,17).
+Quantidades que não são potência de 2 seguem a mesma curva (3× ND 7 ≈ 10,17) e o resultado é exibido arredondado (ND 10).
 
 ## Uso
 
@@ -30,16 +28,15 @@ Quantidades que não são potência de 2 seguem a mesma curva (3× ND 3 ≈ ND 6
 
 - Mostrar no rastreador de combate
 - Jogadores também veem o ND (padrão: só o mestre)
-- Regra para ND diferentes: desafios compostos (padrão) ou fracionada
 - Quem conta como ameaça: tokens hostis (padrão) ou todos os combatentes que não são de jogadores
-- ND sugerido para tesouro: arredondar para baixo (padrão) ou para o mais próximo
+- Arredondamento do ND do encontro (exibido e sugerido ao tesouro): para baixo (padrão) ou para o mais próximo
 
 ## API
 
 ```js
 const api = game.modules.get("t20-calcular-nd-encontro").api;
 api.calcular(["5", "5", "4", "1/2"]);   // { nd, basico, grupos, ... }
-api.calcularCombate(game.combat);       // + { rotulo: "7", ndTesouro: "7" }
+api.calcularCombate(game.combat);       // + { rotulo: "7", exato: "7", ndTesouro: "7" }
 api.ndTesouro();                        // "7"
 api.mostrarDetalhes();
 ```

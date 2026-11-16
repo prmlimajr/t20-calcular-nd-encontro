@@ -12,9 +12,6 @@
  *  4) cada outro grupo até 1 ponto abaixo do valor básico soma +1;
  *     grupos 2 ou mais pontos abaixo não afetam o encontro.
  *
- * Regra opcional "fracionada" (configuração): no passo 4, grupos até 2 pontos
- * abaixo somam +1/2 e até 3 pontos abaixo somam +1/4.
- *
  * ND fracionário usa uma escala "efetiva": ND ≥ 1 fica igual; ND < 1 vira
  * 1 + 2·log2(ND) (1/2 → -1, 1/4 → -3). Nela, dobrar a quantidade sempre soma +2,
  * o que reproduz exatamente a regra "ND × quantidade".
@@ -41,18 +38,11 @@ export const deEfetivo = (e) => (e >= 1 ? e : 2 ** ((e - 1) / 2));
 const EPS = 1e-9;
 
 /** Quanto um grupo soma ao encontro, dada a diferença para o valor básico. */
-export function bonusPorDiferenca(diferenca, regra = "livro") {
-  if (diferenca <= 1 + EPS) return 1;
-  if (regra !== "fracionada") return 0;
-  if (diferenca <= 2 + EPS) return 0.5;
-  if (diferenca <= 3 + EPS) return 0.25;
-  return 0;
-}
+export const bonusPorDiferenca = (diferenca) => (diferenca <= 1 + EPS ? 1 : 0);
 
 /**
  * Calcula o ND do encontro.
  * @param {Array<number|string|{nd:number|string, nome?:string}>} ameacas
- * @param {{regra?: "livro"|"fracionada"}} [opcoes]
  * @returns {null | {
  *   nd: number,          // ND real do encontro (pode ser fracionário)
  *   efetivo: number,
@@ -61,7 +51,7 @@ export function bonusPorDiferenca(diferenca, regra = "livro") {
  *   total: number
  * }}
  */
-export function calcularND(ameacas, { regra = "livro" } = {}) {
+export function calcularND(ameacas) {
   const lista = (ameacas ?? [])
     .map((a) => (a && typeof a === "object" ? { nd: ndParaNumero(a.nd), nome: a.nome ?? "" } : { nd: ndParaNumero(a), nome: "" }))
     .filter((a) => a.nd != null);
@@ -91,7 +81,7 @@ export function calcularND(ameacas, { regra = "livro" } = {}) {
   for (const g of resto) {
     g.base = false;
     g.diferenca = topo.ef - g.ef;
-    g.bonus = bonusPorDiferenca(g.diferenca, regra);
+    g.bonus = bonusPorDiferenca(g.diferenca);
     efetivo += g.bonus;
   }
 
@@ -121,11 +111,12 @@ export function formatarND(nd) {
 const ORDEM_TESOURO = ["1/4", "1/2", ...Array.from({ length: 20 }, (_, i) => String(i + 1))];
 
 /**
- * Converte o ND real do encontro num ND válido da tabela de tesouro (1/4 … 20).
+ * Arredonda o ND real do encontro para um ND inteiro (ou 1/4, 1/2).
  * @param {number} nd
  * @param {"baixo"|"proximo"} modo  arredondar para baixo ou para o mais próximo
+ * @param {boolean} limitar        limita a 20 (tabela de tesouro)
  */
-export function ndInteiro(nd, modo = "baixo") {
+export function ndInteiro(nd, modo = "baixo", limitar = true) {
   if (nd == null || !Number.isFinite(nd)) return null;
   if (nd < 1) {
     // Frações: arredonda na escala efetiva (1/4 → 1/2 → 1 a cada dobro).
@@ -135,7 +126,7 @@ export function ndInteiro(nd, modo = "baixo") {
     return r >= -1 ? "1/2" : "1/4";
   }
   const n = modo === "proximo" ? Math.round(nd + EPS) : Math.floor(nd + EPS);
-  return String(Math.min(20, Math.max(1, n)));
+  return String(Math.max(1, limitar ? Math.min(20, n) : n));
 }
 
 export const ndsDaTabela = () => [...ORDEM_TESOURO];

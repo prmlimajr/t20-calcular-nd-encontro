@@ -6,9 +6,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  width: 100%;
+  position: relative;
   box-sizing: border-box;
-  margin: 4px 0 2px;
+  margin: 4px 8px 6px;
   padding: 3px 8px;
   border: 1px solid rgba(201, 145, 40, 0.55);
   border-radius: 4px;
@@ -17,7 +17,7 @@
   font-size: var(--font-size-13, 13px);
   line-height: 1.4;
   cursor: pointer;
-  flex: 0 0 100%;
+  flex: 0 0 auto;
 }
 .t20nd-faixa:hover {
   border-color: #f2c14e;
@@ -86,4 +86,50 @@
 .t20nd-detalhes tr.ignorado {
   opacity: 0.5;
   text-decoration: line-through;
+}
+
+/* ============================================ */
+/*  Quadro compacto (tela "Gerar tesouro")      */
+/* ============================================ */
+
+.t20nd-caixa {
+  margin: 6px 0 10px;
+  padding: 8px 10px;
+  border: 1px solid rgba(201, 145, 40, 0.6);
+  border-left: 4px solid #c9302c;
+  border-radius: 6px;
+  background: linear-gradient(90deg, rgba(120, 20, 20, 0.25), rgba(201, 145, 40, 0.1));
+}
+.t20nd-caixa-topo {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.t20nd-caixa-topo i {
+  color: #e05050;
+}
+.t20nd-caixa-topo span {
+  flex: 1;
+  font-weight: bold;
+}
+.t20nd-caixa-topo strong {
+  font-size: 1.6em;
+  line-height: 1;
+  color: #f2c14e;
+}
+.t20nd-caixa-topo small {
+  opacity: 0.7;
+}
+.t20nd-caixa ul {
+  margin: 4px 0 0;
+  padding-left: 22px;
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+.t20nd-caixa li.ignorado {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+.t20nd-caixa em {
+  opacity: 0.75;
 }
