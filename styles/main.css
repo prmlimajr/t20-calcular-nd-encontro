@@ -1,0 +1,89 @@
+/* ============================================ */
+/*  Faixa no rastreador de combate              */
+/* ============================================ */
+
+.t20nd-faixa {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0 2px;
+  padding: 3px 8px;
+  border: 1px solid rgba(201, 145, 40, 0.55);
+  border-radius: 4px;
+  background: linear-gradient(90deg, rgba(120, 20, 20, 0.35), rgba(201, 145, 40, 0.18));
+  color: var(--color-text-light-highlight, #f0f0e0);
+  font-size: var(--font-size-13, 13px);
+  line-height: 1.4;
+  cursor: pointer;
+  flex: 0 0 100%;
+}
+.t20nd-faixa:hover {
+  border-color: #f2c14e;
+  box-shadow: 0 0 6px rgba(242, 193, 78, 0.45);
+}
+.t20nd-faixa i {
+  color: #e05050;
+}
+.t20nd-faixa span {
+  flex: 1;
+  text-align: left;
+  opacity: 0.85;
+}
+.t20nd-faixa strong {
+  font-size: 1.15em;
+  color: #f2c14e;
+}
+.t20nd-faixa.vazio {
+  cursor: default;
+  opacity: 0.6;
+  background: none;
+  border-style: dashed;
+}
+
+/* ============================================ */
+/*  Janela de detalhes                          */
+/* ============================================ */
+
+.t20nd-detalhes .t20nd-resumo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.t20nd-detalhes .t20nd-resumo span {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8em;
+  opacity: 0.75;
+}
+.t20nd-detalhes .t20nd-resumo strong {
+  font-size: 2.4em;
+  line-height: 1.1;
+  color: #c9302c;
+}
+.t20nd-detalhes .t20nd-resumo small {
+  opacity: 0.75;
+}
+.t20nd-detalhes table {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+}
+.t20nd-detalhes td {
+  padding: 4px 6px;
+  vertical-align: top;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.25);
+}
+.t20nd-detalhes td small {
+  display: block;
+  opacity: 0.7;
+}
+.t20nd-detalhes tr.base td:first-child {
+  border-left: 3px solid #c9302c;
+}
+.t20nd-detalhes tr.ignorado {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
